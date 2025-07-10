@@ -1,0 +1,139 @@
+# fFtT-highlights.nvim
+
+A highly configurable, opinionated, and feature-rich highlighter for `f/F/t/T` motions, that borrows and improves upon features from [similar plugins](#-acknowledgements).
+
+---
+
+### ✨ Features
+- <b>Smart motions</b>: Use `f/F/t/T` to jump to the next/previous occurence of the current character.
+- <b>Unique character indicators</b>: Highlight characters that require 1-2 jumps to get to.
+- <b>Numbered matches</b>: Show the number of jumps required to get to each matching character
+- <b>Macro & dot-repeat support.</b>
+- <b>Multi-line support.</b>
+- <b>Smart-case/No-case matching.</b>
+
+🛠️ <i>most of the above are optional and configurable</i>
+
+---
+
+### 📸 Demo
+<b>Example configuration 1:</b>
+<p align="center">
+  <img src="./demo.gif" alt="demo" />
+</p>
+
+<b>Example configuration 2:</b>
+<p align="center">
+  <img src="./demo2.gif" alt="demo" />
+</p>
+
+---
+### 🔍 Why make another highlighter?
+<b>Because I wanted:</b>
+- Macro/dot-repeat support.
+- A minimalistic highlighter that highlights no more than is necessary.
+- A feature-rich highlighter that lights up my entire buffer upon a keypress.
+- A near-native vi-like experience, then switching to a bloaty mess the next day, then switching back again.
+- Multiline searching/highlighting, but I didn't want to highlight the entire buffer with irrelevant matches.
+
+- A multiline version of `eyeliner.nvim` / `quick-scope.`
+- To localize the search to my current window, or a configurable range of lines.
+- It fun 👍.
+
+---
+### ⚙️ Requirements
+- Neovim >= 0.11.0
+---
+### 🧰 Setup
+#### Lazy.nvim
+```lua
+{
+	"samiulsami/fFtT-highlights.nvim",
+	config = function()
+		---@module "fFtT-highlights"
+		---@type fFtT_highlights.opts
+		require("fFtT-highlights"):setup({
+			---See below for default configuration options
+		})
+	end,
+}
+```
+#### 🛠️ Default options
+```lua
+---@type fFtT_highlights.opts
+local default_opts = {
+	f = "f", -- forward search key
+	F = "F", -- backward search key
+	t = "t", -- forward till key
+	T = "T", -- backward till key
+	next = ";", -- next key
+	prev = ",", -- previous key
+	reset_key = "<Esc>", -- reset highlights key
+
+	smart_motions = false, -- whether to use f/F/t/T to go to next/previous characters
+
+	-- options: "sensitive" | "smart" | "none"
+	case_sensitivity = "sensitive", -- case sensitivity
+
+	max_highlighted_lines_around_cursor = 300, -- max number of lines to consider above/below cursor for highlighting. Doesn't prevent jumps outside the range.
+
+	match_highlight = {
+		enable = true, -- enable/disable matching chars highlight.
+		highlight_radius = 500, -- consider at most this many characters for highlighting around the cursor.
+		show_jump_numbers = false, -- show the number of jumps required to get to each matching character.
+		priority = 900, -- match highlight priority.
+	},
+
+	multi_line = {
+		enable = false, -- enable/disable multi-line search
+		-- options: "full" | "minimal" | "none"
+		highlight_style = "minimal", -- multi-line highlighting style. "Full" highlights all lines.
+		max_lines = 300, -- max lines to consider for jumping/highlights above/below cursor if multi-line search is enabled.
+	},
+
+	backdrop = {
+		-- options: "full" | "minimal" | "none"
+		style = "minimal", -- backdrop style. "Full" applies backdrop until the entire top/bottom border.
+		border_extend = 1, -- extend backdrop border horizontally by this many characters for clarity.
+		priority = 800, -- backdrop highlight priority.
+	},
+
+	jumpable_chars = {
+		-- options: "always" | "on_key_press" | "never"
+		show_instantly_jumpable = "never", -- when to highlight characters that can be jumped to in 1 step (options below have no effect when this is disabled).
+		show_secondary_jumpable = "never", -- when to highlight characters that can be jumped to in 2 steps.
+		show_all_jumpable_in_words = "never", -- when to highlight all characters that can be jumped to in 1 or 2 steps. Highlights one char per word by default.
+		show_multiline_jumpable = "never", -- when to highlight jumpable characters in other lines.
+		min_gap = 1, -- minimum gap between two jumpable characters.
+		priority = 1100, -- jumpable chars highlight priority.
+		priority_secondary = 1000, -- secondary jumpable chars highlight priority.
+	},
+
+	disabled_filetypes = {}, -- disable the plugin for these filetypes (falls back to default keybindings)
+
+	disabled_buftypes = { "nofile" }, -- disable the plugin for these buftypes (falls back to default keybindings)
+}
+```
+---
+### 🖌️ Highlight groups
+| Name                   | Description                                              |
+| --------------------------------- | -------------------------------------------------------- |
+| `fFtTBackDropHighlight`           | Used for backdrop shading                                |
+| `fFtTMatchHighlight`              | Highlight for matched characters                         |
+| `fFtTJumpNumHighlight`            | Highlight for jump numbers (multi-digit)                 |
+| `fFtTJumpNumHighlightSingleDigit` | Highlight for jump numbers (single-digit only)           |
+| `fFtTUniqueHighlight`             | Highlight for unique jumpable characters                 |
+| `fFtTUniqueHighlightSecondary`    | Highlight for secondary unique characters (2-step jumps) |
+---
+### 💎 Acknowledgements
+Thanks to the following plugins for their inspiration, and especially to `mini.jump` for solving macro compatibility and multi-line search in an elegant way.
+- [mini-jump](https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-jump.md) 
+- [flash-nvim](https://github.com/folke/flash.nvim)
+- [clever-f](https://github.com/rhysd/clever-f.vim)
+- [jinh0/eyeliner.nvim](https://github.com/jinh0/eyeliner.nvim)
+- [quick-scope](https://github.com/unblevable/quick-scope)
+- [nvim-fFHighlight](https://github.com/kevinhwang91/nvim-fFHighlight)
+---
+#### 📋 TODO
+- [ ] Tests and/or CI
+- [ ] Continue resisting the urge to add more useless features

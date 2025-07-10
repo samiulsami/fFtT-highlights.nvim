@@ -1,0 +1,149 @@
+fFtT-highlights.nvim Options                                *fFtT-highlights.nvim-options*
+==============================================================================
+
+DESCRIPTION                                               *fFtT-highlights.nvim-description*
+
+    A highly configurable, opinionated, and feature-rich highlighter for
+    f/F/t/T motions, that borrows and improves upon features from
+    |fFtT-highlights.nvim-acknowledgements|.
+
+==============================================================================
+
+FEATURES                                                   *fFtT-highlights.nvim-features*
+
+    • Smart motions
+        Use f/F/t/T to jump to the next/previous occurence of the current
+        character; similar to.
+
+    • Unique character indicators
+        Highlight characters that require 1-2 jumps to get to.
+
+    • Numbered matches
+        Show the number of jumps required to get to each matching character
+
+    • Macro & dot-repeat support.
+
+    • Multi-line support.
+
+    • Smart-case/No-case matching.
+
+==============================================================================
+
+REQUIREMENTS                                            *fFtT-highlights.nvim-requirements*
+
+    - Neovim >= 0.11.0
+
+==============================================================================
+
+SETUP (Lazy.nvim)                                           *fFtT-highlights.nvim-setup*
+
+>lua
+{
+	"samiulsami/fFtT-highlights.nvim",
+	config = function()
+		---@module "fFtT-highlights"
+		---@type fFtT_highlights.opts
+		require("fFtT-highlights"):setup({
+			---See below for default configuration options
+		})
+	end,
+}
+
+==============================================================================
+
+DEFAULT OPTIONS                                     *fFtT-highlights.nvim-default-options*
+
+>lua
+---@type fFtT_highlights.opts
+local default_opts = {
+	f = "f", -- forward search key
+	F = "F", -- backward search key
+	t = "t", -- forward till key
+	T = "T", -- backward till key
+	next = ";", -- next key
+	prev = ",", -- previous key
+	reset_key = "<Esc>", -- reset highlights key
+
+	smart_motions = false, -- whether to use f/F/t/T to go to next/previous characters
+
+	-- options: "sensitive" | "smart" | "none"
+	case_sensitivity = "sensitive", -- case sensitivity
+
+	max_highlighted_lines_around_cursor = 300, -- max number of lines to consider above/below cursor for highlighting. Doesn't prevent jumps outside the range.
+
+	match_highlight = {
+		enable = true, -- enable/disable matching chars highlight.
+		highlight_radius = 500, -- consider at most this many characters for highlighting around the cursor.
+		show_jump_numbers = false, -- show the number of jumps required to get to each matching character.
+		priority = 900, -- match highlight priority.
+	},
+
+	multi_line = {
+		enable = false -- enable/disable multi-line search
+		-- options: "full" | "minimal" | "none"
+		highlight_style = "minimal", -- multi-line highlighting style. "Full" highlights all lines.
+		max_lines = 300, -- max lines to consider for jumping/highlights above/below cursor if multi-line search is enabled.
+	},
+
+	backdrop = {
+		-- options: "full" | "minimal" | "none"
+		style = "minimal", -- backdrop style. "Full" applies backdrop until the entire top/bottom border.
+		border_extend = 1, -- extend backdrop border horizontally by this many characters for clarity.
+		priority = 800, -- backdrop highlight priority.
+	},
+
+	jumpable_chars = {
+		-- options: "always" | "on_key_press" | "never"
+		show_instantly_jumpable = "never", -- when to highlight characters that can be jumped to in 1 step (options below have no effect when this is disabled).
+		show_secondary_jumpable = "never", -- when to highlight characters that can be jumped to in 2 steps.
+		show_all_jumpable_in_words = "never", -- when to highlight all characters that can be jumped to in 1 or 2 steps. Highlights one char per word by default.
+		show_multiline_jumpable = "never", -- when to highlight jumpable characters in other lines.
+		min_gap = 1, -- minimum gap between two jumpable characters.
+		priority = 1100, -- jumpable chars highlight priority.
+		priority_secondary = 1000, -- secondary jumpable chars highlight priority.
+	},
+
+	disabled_filetypes = {}, -- disable the plugin for these filetypes (falls back to default keybindings)
+	disabled_buftypes = { "nofile" }, -- disable the plugin for these buftypes (falls back to default keybindings)
+}
+<
+==============================================================================
+
+HIGHLIGHT GROUPS                                      *fFtT-highlights.nvim-highlight-groups*
+
+    🖌️ The plugin defines the following highlight groups for styling and customization:
+
+        fFtTBackDropHighlight
+            Used for backdrop shading.
+
+        fFtTMatchHighlight
+            Highlight for matched characters.
+
+        fFtTJumpNumHighlight
+            Highlight for jump numbers (multi-digit).
+
+        fFtTJumpNumHighlightSingleDigit
+            Highlight for jump numbers (single-digit only).
+
+        fFtTUniqueHighlight
+            Highlight for unique jumpable characters.
+
+        fFtTUniqueHighlightSecondary
+            Highlight for secondary unique characters (2-step jumps).
+==============================================================================
+
+ACKNOWLEDGEMENTS                                 *fFtT-highlights.nvim-acknowledgements*
+
+    Thanks to the following plugins for their inspiration, and especially to
+    mini.jump for solving macro compatibility and multi-line search in an elegant way.
+
+    - mini-jump:        https://github.com/echasnovski/mini.nvim/blob/main/readmes/mini-jump.md
+    - flash-nvim:       https://github.com/folke/flash.nvim
+    - clever-f:         https://github.com/rhysd/clever-f.vim
+    - eyeliner.nvim:    https://github.com/jinh0/eyeliner.nvim
+    - quick-scope:      https://github.com/unblevable/quick-scope
+    - nvim-fFHighlight: https://github.com/kevinhwang91/nvim-fFHighlight
+
+==============================================================================
+
+vim:tw=80:ts=4:ft=help:norl:
