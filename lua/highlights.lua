@@ -141,6 +141,8 @@ function highlight_utils:set_on_key_highlights(opts, motion)
 	---@type table<string, integer> | nil
 	local seen = self:highlight_jumpable_chars(opts, bufnr, cursor_row, line, col_from, col_to, reverse, opts.jumpable_chars.show_all_jumpable_in_words ~= "never", opts.jumpable_chars.show_secondary_jumpable ~= "never")
 
+	---iterate from after the cursor line to the top/bottom line of the window
+	---handle the cursor line separately below
 	for cur_row = cursor_row + inc, last_row, inc do
 		line = vim.api.nvim_buf_get_lines(bufnr, cur_row, cur_row + 1, false)[1]
 		if not line then
@@ -154,12 +156,13 @@ function highlight_utils:set_on_key_highlights(opts, motion)
 			seen = self:highlight_jumpable_chars(opts, bufnr, cur_row, line, l, r, reverse, opts.jumpable_chars.show_all_jumpable_in_words ~= "never", opts.jumpable_chars.show_secondary_jumpable ~= "never", seen)
 		end
 
-		if opts.backdrop.style == "full" then
+		if opts.backdrop.style.on_key_press == "full" then
 			self:set_backdrop_highlight(opts, bufnr, line, cur_row, l, r)
 		end
 	end
 
-	if opts.backdrop.style ~= "none" then
+	---cursor line
+	if opts.backdrop.style.on_key_press ~= "none" then
 		line = vim.api.nvim_buf_get_lines(bufnr, cursor_row, cursor_row + 1, false)[1]
 		self:set_backdrop_highlight(opts, bufnr, line, cursor_row, col_from, col_to)
 	end
@@ -172,6 +175,7 @@ end
 ---@param bufnr integer
 ---@param char string
 ---@param reverse boolean
+---FIXME: refactor this function for readability
 function highlight_utils:set_in_motion_highlights(opts, utils, bufnr, char, reverse)
 	if vim.fn.reg_executing() ~= "" then
 		return
@@ -203,24 +207,35 @@ function highlight_utils:set_in_motion_highlights(opts, utils, bufnr, char, reve
 		inc = 1
 	end
 
+	---cursor line highlighting. cleared and re-highlighted if a match is not found
 	local _, all_row_match_count =
 		self:set_match_highlights(opts, utils, bufnr, cursor_row, line, col_from, col_to, reverse, char)
-	self:set_backdrop_highlight(opts, bufnr, line, cursor_row, col_from, col_to)
+	if opts.backdrop.style.show_in_motion == "upto_next_line" then
+		self:set_backdrop_highlight(opts, bufnr, line, cursor_row, col_from, col_to)
+	end
 
+	---iterate from after the cursor line to the top/bottom line of the window
 	local other_row_match_count = 0
-	if opts.multi_line.highlight_style ~= "none" then
-		for cur_row = cursor_row + inc, last_row, inc do
-			line = vim.api.nvim_buf_get_lines(bufnr, cur_row, cur_row + 1, false)[1]
-			if not line then
-				break
-			end
-			line_len = vim.fn.strchars(line)
-			local l, r = 0, math.min(line_len - 1, opts.match_highlight.highlight_radius - 1)
-			if reverse then
-				l, r = line_len - 1, math.max(line_len - 1 - opts.match_highlight.highlight_radius + 1, 0)
-			end
+	local stop_highlighting_matches = false
+	local another_row_has_backdrop_applied = false
 
-			local last_matching_col = nil
+	for cur_row = cursor_row + inc, last_row, inc do
+		line = vim.api.nvim_buf_get_lines(bufnr, cur_row, cur_row + 1, false)[1]
+		if not line then
+			break
+		end
+		line_len = vim.fn.strchars(line)
+		local l, r = 0, math.min(line_len - 1, opts.match_highlight.highlight_radius - 1)
+		if reverse then
+			l, r = line_len - 1, math.max(line_len - 1 - opts.match_highlight.highlight_radius + 1, 0)
+		end
+
+		if opts.backdrop.style.show_in_motion == "full" then
+			self:set_backdrop_highlight(opts, bufnr, line, cur_row, l, r)
+		end
+
+		local first_matching_col = nil
+		if not stop_highlighting_matches then
 			for i = l, r, inc do
 				if utils:char_is_equal(opts, line:sub(i + 1, i + 1), char) then
 					local virt_text, virt_text_pos =
@@ -237,44 +252,74 @@ function highlight_utils:set_in_motion_highlights(opts, utils, bufnr, char, reve
 					end
 					all_row_match_count = all_row_match_count + 1
 					other_row_match_count = other_row_match_count + 1
-					last_matching_col = i
-					if opts.multi_line.highlight_style ~= "full" then
+					if first_matching_col == nil then
+						first_matching_col = i
+					end
+					if opts.match_highlight.style ~= "full" then
 						break
 					end
 				end
 			end
 
-			if opts.multi_line.highlight_style == "full" then
-				self:set_backdrop_highlight(opts, bufnr, line, cur_row, l, r)
-			else
-				self:set_backdrop_highlight(opts, bufnr, line, cur_row, l, last_matching_col or r)
+			if opts.backdrop.style.show_in_motion == "upto_next_line" and not another_row_has_backdrop_applied then
+				if first_matching_col ~= nil then
+					another_row_has_backdrop_applied = true
+					self:set_backdrop_highlight(opts, bufnr, line, cur_row, l, first_matching_col)
+				elseif first_matching_col == nil then
+					self:set_backdrop_highlight(opts, bufnr, line, cur_row, l, r)
+				end
 			end
+		elseif opts.backdrop.style.show_in_motion ~= "full" then
+			break
+		end
 
-			if last_matching_col ~= nil and opts.multi_line.highlight_style ~= "full" then
-				break
-			end
+		--- highlight only one matching character in another line; setting backdro accordingly
+		if first_matching_col ~= nil and opts.match_highlight.style ~= "full" then
+			stop_highlighting_matches = true
 		end
 	end
 
-	if other_row_match_count > 0 then
+	if opts.backdrop.style.show_in_motion == "full" then
+		line = vim.api.nvim_buf_get_lines(bufnr, cursor_row, cursor_row + 1, false)[1]
+		local _, match_count =
+			self:set_match_highlights(opts, utils, bufnr, cursor_row, line, col_from, col_to, reverse, char)
+		if match_count > 1 then
+			self:set_backdrop_highlight(opts, bufnr, line, cursor_row, col_from, col_to)
+		end
 		self.redraw()
 		return
 	end
 
-	---No match in other lines;
+	---@return integer | nil, integer | nil
+	local get_char_boundaries_in_cursor_line = function()
+		line = vim.api.nvim_buf_get_lines(bufnr, cursor_row, cursor_row + 1, false)[1]
+		local char_pos_first, char_pos_last = nil, nil
+		for i = col_from, col_to, inc do
+			if utils:char_is_equal(opts, line:sub(i + 1, i + 1), char) then
+				if char_pos_first == nil then
+					char_pos_first = i
+				end
+				char_pos_last = i
+			end
+		end
+		return char_pos_first, char_pos_last
+	end
+
+	if other_row_match_count > 0 then
+		if opts.backdrop.style.show_in_motion == "current_line" then
+			local char_pos_first, char_pos_last = get_char_boundaries_in_cursor_line()
+			if char_pos_first ~= nil and char_pos_last ~= nil and char_pos_first ~= char_pos_last then
+				self:set_backdrop_highlight(opts, bufnr, line, cursor_row, char_pos_first, char_pos_last)
+			end
+		end
+		self.redraw()
+		return
+	end
+
+	---No match found in other lines;
 	---need to manually highlight the current line as it may be a special case depending on the user configuration
 	self:clear_fFtT_hl()
-
-	line = vim.api.nvim_buf_get_lines(bufnr, cursor_row, cursor_row + 1, false)[1]
-	local char_pos_first, char_pos_last = nil, nil
-	for i = col_from, col_to, inc do
-		if utils:char_is_equal(opts, line:sub(i + 1, i + 1), char) then
-			if char_pos_first == nil then
-				char_pos_first = i
-			end
-			char_pos_last = i
-		end
-	end
+	local char_pos_first, char_pos_last = get_char_boundaries_in_cursor_line()
 
 	if char_pos_first == nil or char_pos_last == nil then
 		self.redraw()
@@ -285,8 +330,13 @@ function highlight_utils:set_in_motion_highlights(opts, utils, bufnr, char, reve
 	local _, match_count = self:set_match_highlights(opts, utils, bufnr, cursor_row, line, char_pos_first, char_pos_last, reverse, char)
 	if match_count <= 1 then
 		self:clear_fFtT_hl()
-	else
+	elseif
+		opts.backdrop.style.show_in_motion == "current_line"
+		or opts.backdrop.style.show_in_motion == "upto_next_line"
+	then
 		self:set_backdrop_highlight(opts, bufnr, line, cursor_row, char_pos_first, char_pos_last)
+	elseif opts.backdrop.style.show_in_motion == "full" then
+		self:set_backdrop_highlight(opts, bufnr, line, cursor_row, col_from, col_to)
 	end
 
 	self.redraw()
@@ -354,9 +404,6 @@ end
 ---@param from integer
 ---@param to integer
 function highlight_utils:set_backdrop_highlight(opts, bufnr, line, row, from, to)
-	if opts.backdrop.style == "none" then
-		return
-	end
 	if from > to then
 		from, to = to, from
 	end
@@ -374,8 +421,6 @@ function highlight_utils:set_backdrop_highlight(opts, bufnr, line, row, from, to
 	self:update_fFtT_hl_lines_info(extmark_id, bufnr)
 end
 
----TODO: Find a better way to clear highlights in a namespace.
-
 ---@param extmark_id integer
 ---@param bufnr integer
 function highlight_utils:update_unique_hl_lines_info(extmark_id, bufnr)
@@ -389,14 +434,14 @@ function highlight_utils:update_fFtT_hl_lines_info(extmark_id, bufnr)
 end
 
 function highlight_utils:clear_fFtT_hl()
-	for i, data in ipairs(self.fFtT_hl_extmarks) do
+	for _, data in ipairs(self.fFtT_hl_extmarks) do
 		pcall(vim.api.nvim_buf_del_extmark, data[1], self.fFtT_ns, data[2])
 	end
 	self.fFtT_hl_extmarks = {}
 end
 
 function highlight_utils:clear_unique_char_hl()
-	for i, data in ipairs(self.unique_hl_extmarks) do
+	for _, data in ipairs(self.unique_hl_extmarks) do
 		pcall(vim.api.nvim_buf_del_extmark, data[1], self.unique_highlight_ns, data[2])
 	end
 	self.unique_hl_extmarks = {}
@@ -441,8 +486,8 @@ function highlight_utils:highlight_jumpable_chars(opts, bufnr, row, line, from, 
 	end
 	local word_ended = true
 	local word_ended_secondary = true
-	local last_highlighted_index = reverse and 999999 or -999999
-	local last_highlighted_secondary_index = reverse and 999999 or -999999
+	local last_highlighted_index = reverse and 999999999 or -999999999
+	local last_highlighted_secondary_index = reverse and 999999999 or -999999999
 
 	local acceptable_distance = function(l, r)
 		if l > r then
@@ -453,7 +498,7 @@ function highlight_utils:highlight_jumpable_chars(opts, bufnr, row, line, from, 
 
 	for i = from, to, inc do
 		local char = line:sub(i + 1, i + 1)
-		if opts.case_sensitivity ~= "sensitive" then
+		if opts.case_sensitivity ~= "default" then
 			char = char:lower()
 		end
 

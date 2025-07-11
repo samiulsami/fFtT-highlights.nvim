@@ -66,29 +66,46 @@ local default_opts = {
 
 	smart_motions = false, -- whether to use f/F/t/T to go to next/previous characters
 
-	-- options: "sensitive" | "smart" | "none"
-	case_sensitivity = "sensitive", -- case sensitivity
+	-- options: "default" | "smart_case" | "ignore_case"
+	case_sensitivity = "default", -- case sensitivity
 
 	max_highlighted_lines_around_cursor = 300, -- max number of lines to consider above/below cursor for highlighting. Doesn't prevent jumps outside the range.
 
 	match_highlight = {
 		enable = true, -- enable/disable matching chars highlight.
+
+		-- options: "full" | "minimal" | "none"
+		-- "full": highlights all matches until the top/bottom border or max_lines.
+		-- "minimal": highlights the prefix/suffix matches int the current line, and upto exactly ONE match above/below the cursor if it exists.
+		-- "none": disables multi-line highlighting.
+		style = "minimal", -- multi-line highlighting style.
 		highlight_radius = 500, -- consider at most this many characters for highlighting around the cursor.
 		show_jump_numbers = false, -- show the number of jumps required to get to each matching character.
 		priority = 900, -- match highlight priority.
 	},
 
 	multi_line = {
-		enable = false -- enable/disable multi-line search
-		-- options: "full" | "minimal" | "none"
-		highlight_style = "minimal", -- multi-line highlighting style. "Full" highlights all lines.
+		enable = false, -- enable/disable multi-line search
 		max_lines = 300, -- max lines to consider for jumping/highlights above/below cursor if multi-line search is enabled.
 	},
 
 	backdrop = {
-		-- options: "full" | "minimal" | "none"
-		style = "minimal", -- backdrop style. "Full" applies backdrop until the entire top/bottom border.
-		border_extend = 1, -- extend backdrop border horizontally by this many characters for clarity.
+		style = {
+			-- options: "full" | "minimal" | "none"
+			-- "full": highlights from the cursor line upto the top/bottom border.
+			-- "current_line": highlights from the until the last matching character in the cursor line.
+			-- "none": disables backdrop highlighting on keypress.
+			on_key_press = "full", -- highlight backdrop on keypress.
+
+			-- options: "full" | "upto_next_line" | "current_line" | "none"
+			-- "full": highlights from the cursor line upto the top/bottom border.
+			-- "current_line": highlights from the until the last matching character in the cursor line.
+			-- "upto_next_line": highlights from the cursor line upto the next matching character in another line.
+			-- "none": disables backdrop highlighting while in motion.
+			show_in_motion = "until_next_line", -- highlight backdrop while in motion.
+		},
+		on_key_press = true, -- whether to show backdrop on keypress.
+		border_extend = 1, -- extend backdrop border horizontally by this many characters.
 		priority = 800, -- backdrop highlight priority.
 	},
 
@@ -104,6 +121,7 @@ local default_opts = {
 	},
 
 	disabled_filetypes = {}, -- disable the plugin for these filetypes (falls back to default keybindings)
+
 	disabled_buftypes = { "nofile" }, -- disable the plugin for these buftypes (falls back to default keybindings)
 }
 <

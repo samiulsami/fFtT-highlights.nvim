@@ -28,11 +28,11 @@ end
 ---@param typed_char string
 ---@return boolean
 function utils:char_is_equal(opts, string_char, typed_char)
-	if opts.case_sensitivity == "sensitive" then
+	if opts.case_sensitivity == "default" then
 		return string_char == typed_char
 	end
 
-	if opts.case_sensitivity == "smart" then
+	if opts.case_sensitivity == "smart_case" then
 		if typed_char == typed_char:lower() then
 			return typed_char:lower() == string_char:lower()
 		end
@@ -101,7 +101,8 @@ function utils:jump_to_next_char(opts, motion, char, reverse, extra_flags)
 		end
 	end
 
-	local ignore_case = opts.case_sensitivity == "none" or (opts.case_sensitivity == "smart" and char == char:lower())
+	local ignore_case = opts.case_sensitivity == "ignore_case"
+		or (opts.case_sensitivity == "smart_case" and char == char:lower())
 	local prefix = ignore_case and [[\V\c]] or [[\V\C]]
 	pattern = prefix .. pattern
 

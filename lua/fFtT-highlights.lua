@@ -7,7 +7,7 @@
 ---@field prev string | nil previous key. default: ","
 ---@field reset_key string | nil highlight/jump reset key. default: "<Esc>"
 ---@field smart_motions boolean | nil whether to use f/F/t/T to go to next/previous characters. default: false
----@field case_sensitivity "sensitive" | "smart" | "none" | nil case sensitivity. default: "sensitive""
+---@field case_sensitivity "default" | "smart_case" | "ignore_case" | nil case sensitivity. default: "sensitive""
 ---@field max_highlighted_lines_around_cursor integer | nil max number of lines to consider above/below cursor for highlighting. default: 300
 ---@field match_highlight match_highlight | nil
 ---@field multi_line multi_line | nil
@@ -18,19 +18,24 @@
 
 ---@class match_highlight matching chars highlight configuration
 ---@field enable boolean | nil enable/disable matching chars highlight. default: true
+---@field style "full" | "minimal" multi-line highlighting style. default: "minimal"
 ---@field highlight_radius integer | nil consider at most this many characters for highlighting. default: 500
 ---@field show_jump_numbers boolean nil show the number of jumps required to get to each matching character. default: false
 ---@field priority integer | nil match highlight priority. default: 900
 
 ---@class multi_line multi-line search configuration
 ---@field enable boolean | nil enable/disable multi-line search. default: false
----@field highlight_style "full" | "minimal" | "none" multi-line highlighting style. default: "minimal"
 ---@field max_lines integer | nil (Forced window locality) max lines to consider above/below cursor if multi-line search is enabled. default: 300
 
 ---@class backdrop backdrop/background-dimming configuration
----@field style "full" | "minimal" | "none" backdrop style. default: "minimal"
----@field border_extend integer | nil extend backdrop border horizontally by this many characters. default: "1"
+---@field style backdrop_style | nil backdrop style.
+---@field on_keypress boolean | nil whether show backdrop on keypress. default: true
+---@field border_extend integer | nil extend backdrop border horizontally by this many characters. default: "0"
 ---@field priority integer | nil backdrop highlight priority. default: 800
+
+---@class backdrop_style
+---@field on_key_press  "full" | "current_line" | "none" backdrop behavior upon keypress. default: "full"
+---@field show_in_motion "full" | "upto_next_line" | "current_line" | "none" backdrop behavior while in motion. default: "upto_next_line""
 
 ---@class jumpable_chars instantly jumpable characters configuration
 ---@field show_instantly_jumpable "on_key_press" | "always" | "never" | nil when to show instantly jumpable characters (options below have no effect when this is disabled). default: "always"
@@ -84,22 +89,26 @@ local default_opts = {
 	prev = ",",
 	reset_key = "<Esc>",
 	smart_motions = false,
-	case_sensitivity = "sensitive",
+	case_sensitivity = "default",
 	max_highlighted_lines_around_cursor = 300,
 	match_highlight = {
 		enable = true,
 		highlight_radius = 500,
+		style = "minimal",
 		show_jump_numbers = false,
 		priority = 900,
 	},
 	multi_line = {
 		enable = false,
-		highlight_style = "minimal",
 		max_lines = 300,
 	},
 	backdrop = {
-		style = "minimal",
-		border_extend = 1,
+		style = {
+			on_key_press = "full",
+			show_in_motion = "upto_next_line",
+		},
+		border_extend = 0,
+		on_keypress = true,
 		priority = 800,
 	},
 	jumpable_chars = {
@@ -107,7 +116,7 @@ local default_opts = {
 		show_secondary_jumpable = "never",
 		show_all_jumpable_in_words = "never",
 		show_multiline_jumpable = "never",
-		min_gap = 2,
+		min_gap = 1,
 		priority = 1100,
 		priority_secondary = 1000,
 	},
@@ -178,12 +187,15 @@ function fFtT_hl:validate_opts(opts)
 		if opts.match_highlight.highlight_radius < 0 then
 			errors[#errors + 1] = "opts.match_highlight.highlight_radius must be >= 0"
 		end
+		if opts.match_highlight.style ~= "minimal" and opts.match_highlight.style ~= "full" then
+			errors[#errors + 1] = "opts.match_highlight.style must be one of 'full' or 'minimal'"
+		end
 	end
 	if opts.max_highlighted_lines_around_cursor < 0 then
 		errors[#errors + 1] = "opts.max_highlighted_lines_around_cursor must be >= 0"
 	end
-	if opts.case_sensitivity ~= "sensitive" and opts.case_sensitivity ~= "smart" and opts.case_sensitivity ~= "none" then
-		errors[#errors + 1] = "opts.case_sensitivity must be one of 'default', 'smart' or 'none'"
+	if opts.case_sensitivity ~= "default" and opts.case_sensitivity ~= "smart_case" and opts.case_sensitivity ~= "ignore_case" then
+		errors[#errors + 1] = "opts.case_sensitivity must be one of 'default', 'smart_case' or 'ignore_case'"
 	end
 
 	if not opts.jumpable_chars then
@@ -212,8 +224,15 @@ function fFtT_hl:validate_opts(opts)
 		if opts.backdrop.border_extend < 0 then
 			errors[#errors + 1] = "opts.backdrop.border_extend must be >= 0"
 		end
-		if opts.backdrop.style ~= "minimal" and opts.backdrop.style ~= "full" and opts.backdrop.style ~= "none" then
-			errors[#errors + 1] = "opts.backdrop.style must be one of 'none', 'full' or 'none'"
+		if not opts.backdrop.style then
+			errors[#errors + 1] = "opts.backdrop.style must be set!"
+		else
+			if opts.backdrop.style.on_key_press ~= "full" and opts.backdrop.style.on_key_press ~= "current_line" and opts.backdrop.style.on_key_press ~= "none" then
+				errors[#errors + 1] = "opts.backdrop.style.on_key_press must be one of 'current_line', 'full', or 'none'"
+			end
+			if opts.backdrop.style.show_in_motion ~= "full" and opts.backdrop.style.show_in_motion ~= "upto_next_line" and opts.backdrop.style.show_in_motion ~= "current_line" and opts.backdrop.style.show_in_motion ~= "none" then
+				errors[#errors + 1] = "opts.backdrop.style.show_in_motion must be one of 'current_line', 'upto_next_line', 'full', or 'none'"
+			end
 		end
 	end
 
@@ -222,9 +241,6 @@ function fFtT_hl:validate_opts(opts)
 	else
 		if opts.multi_line.max_lines < 0 then
 			errors[#errors + 1] = "opts.multi_line.max_lines must be >= 0"
-		end
-		if opts.multi_line.highlight_style ~= "minimal" and opts.multi_line.highlight_style ~= "full" and opts.multi_line.highlight_style ~= "none" then
-			errors[#errors + 1] = "opts.multi_line.highlight_style must be one of 'none', 'full' or 'minimal'"
 		end
 	end
 	--stylua: ignore end

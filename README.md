@@ -1,6 +1,7 @@
 # fFtT-highlights.nvim
 
-A highly configurable, opinionated, and feature-rich highlighter for `f/F/t/T` motions, that borrows and improves upon features from [similar plugins](#-acknowledgements).
+A highly configurable and opinionated highlighter for `f/F/t/T` motions, that borrows and improves upon features from [similar plugins](#-acknowledgements).
+Extremely minimalistic by default, but can be effortlessly configured to support any and all of the features mentioned below.
 
 ---
 
@@ -12,19 +13,94 @@ A highly configurable, opinionated, and feature-rich highlighter for `f/F/t/T` m
 - <b>Multi-line support.</b>
 - <b>Smart-case/No-case matching.</b>
 
-🛠️ <i>most of the above are optional and configurable</i>
+⚠️ <u><i>Most of the above are disabled by default, and must be enabled manually</i></u>
 
 ---
 
-### 📸 Demo
-<b>Example configuration 1:</b>
+### 📸 Showcase
+<details>
+  <summary><b>Default config</b></summary>
+
+  ```lua
+  {}
+  ```
+</details>
+
 <p align="center">
-  <img src="./demo.gif" alt="demo" />
+  <img src="./demo/default.gif" alt="demo0" />
 </p>
 
-<b>Example configuration 2:</b>
+---
+<details>
+  <summary><b>Multiline enabled</b></summary>
+
+  ```lua
+  {
+	  multi_line = {
+		  enable = true,
+	  }
+  }
+  ```
+</details>
 <p align="center">
-  <img src="./demo2.gif" alt="demo" />
+  <img src="./demo/Multiline.gif" alt="demo1" />
+</p>
+
+---
+<details>
+  <summary><b>Jumpable chars highlighting:</b></summary>
+
+  ```lua
+  {
+	  multi_line = {
+		  enable = true,
+	  },
+	  match_highlight = {
+		  style = "full",
+	  },
+	  backdrop = {
+		  style = {
+			  on_key_press = "full",
+			  show_in_motion = "full",
+		  },
+	  },
+	  jumpable_chars = {
+		  show_instantly_jumpable = "always",
+		  show_multiline_jumpable = "on_key_press",
+	  }
+  }
+  ``````
+</details>
+
+<p align="center">
+  <img src="./demo/Jumpable.gif" alt="demo3" />
+</p>
+
+---
+<details>
+<summary><b>Jump numbers next to each match:</b></summary>
+
+  ```lua
+  {
+	  multi_line = {
+		  enable = true,
+	  },
+	  match_highlight = {
+		  style = "full",
+		  show_jump_numbers = true,
+	  },
+	  backdrop = {
+		  style = {
+			  on_key_press = "full",
+			  show_in_motion = "full",
+		  },
+	  },
+  }
+  ```
+</details>
+
+<p align="center">
+  <img src="./demo/Jump numbers.gif" alt="demo4" />
 </p>
 
 ---
@@ -35,14 +111,13 @@ A highly configurable, opinionated, and feature-rich highlighter for `f/F/t/T` m
 - A feature-rich highlighter that lights up my entire buffer upon a keypress.
 - A near-native vi-like experience, then switching to a bloaty mess the next day, then switching back again.
 - Multiline searching/highlighting, but I didn't want to highlight the entire buffer with irrelevant matches.
-
 - A multiline version of `eyeliner.nvim` / `quick-scope.`
 - To localize the search to my current window, or a configurable range of lines.
 - It fun 👍.
 
 ---
 ### ⚙️ Requirements
-- Neovim >= 0.11.0
+- Tested on Neovim >= 0.11.0
 ---
 ### 🧰 Setup
 #### Lazy.nvim
@@ -72,13 +147,19 @@ local default_opts = {
 
 	smart_motions = false, -- whether to use f/F/t/T to go to next/previous characters
 
-	-- options: "sensitive" | "smart" | "none"
-	case_sensitivity = "sensitive", -- case sensitivity
+	-- options: "default" | "smart_case" | "ignore_case"
+	case_sensitivity = "default", -- case sensitivity
 
 	max_highlighted_lines_around_cursor = 300, -- max number of lines to consider above/below cursor for highlighting. Doesn't prevent jumps outside the range.
 
 	match_highlight = {
 		enable = true, -- enable/disable matching chars highlight.
+
+		-- options: "full" | "minimal" | "none"
+		-- "full": highlights all matches until the top/bottom border or max_lines.
+		-- "minimal": highlights the prefix/suffix matches int the current line, and upto exactly ONE match above/below the cursor if it exists.
+		-- "none": disables multi-line highlighting.
+		style = "minimal", -- multi-line highlighting style.
 		highlight_radius = 500, -- consider at most this many characters for highlighting around the cursor.
 		show_jump_numbers = false, -- show the number of jumps required to get to each matching character.
 		priority = 900, -- match highlight priority.
@@ -86,15 +167,26 @@ local default_opts = {
 
 	multi_line = {
 		enable = false, -- enable/disable multi-line search
-		-- options: "full" | "minimal" | "none"
-		highlight_style = "minimal", -- multi-line highlighting style. "Full" highlights all lines.
 		max_lines = 300, -- max lines to consider for jumping/highlights above/below cursor if multi-line search is enabled.
 	},
 
 	backdrop = {
-		-- options: "full" | "minimal" | "none"
-		style = "minimal", -- backdrop style. "Full" applies backdrop until the entire top/bottom border.
-		border_extend = 1, -- extend backdrop border horizontally by this many characters for clarity.
+		style = {
+			-- options: "full" | "minimal" | "none"
+			-- "full": highlights from the cursor line upto the top/bottom border.
+			-- "current_line": highlights from the until the last matching character in the cursor line.
+			-- "none": disables backdrop highlighting on keypress.
+			on_key_press = "full", -- highlight backdrop on keypress.
+
+			-- options: "full" | "upto_next_line" | "current_line" | "none"
+			-- "full": highlights from the cursor line upto the top/bottom border.
+			-- "current_line": highlights from the until the last matching character in the cursor line.
+			-- "upto_next_line": highlights from the cursor line upto the next matching character in another line.
+			-- "none": disables backdrop highlighting while in motion.
+			show_in_motion = "until_next_line", -- highlight backdrop while in motion.
+		},
+		on_key_press = true, -- whether to show backdrop on keypress.
+		border_extend = 1, -- extend backdrop border horizontally by this many characters.
 		priority = 800, -- backdrop highlight priority.
 	},
 
@@ -135,5 +227,7 @@ Thanks to the following plugins for their inspiration, and especially to `mini.j
 - [nvim-fFHighlight](https://github.com/kevinhwang91/nvim-fFHighlight)
 ---
 #### 📋 TODO
-- [ ] Tests and/or CI
-- [ ] Continue resisting the urge to add more useless features
+- [ ] Optimize highlighting performance and fault tolerance.
+- [ ] Fix redundancies.
+- [ ] Tests and/or ci.
+- [ ] Continue resisting the urge to add more useless features.
