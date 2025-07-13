@@ -18,7 +18,7 @@
 
 ---@class match_highlight matching chars highlight configuration
 ---@field enable boolean enable/disable matching chars highlight. default: true
----@field style "full" | "minimal" multi-line highlighting style. default: "minimal"
+---@field style "full" | "minimal" match highlighting style. default: "minimal"
 ---@field highlight_radius integer consider at most this many characters for highlighting. default: 500
 ---@field show_jump_numbers boolean show the number of jumps required to get to each matching character. default: false
 ---@field priority integer match highlight priority. default: 900

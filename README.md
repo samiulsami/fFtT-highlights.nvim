@@ -156,10 +156,10 @@ local default_opts = {
 		enable = true, -- enable/disable matching chars highlight.
 
 		-- options: "full" | "minimal" | "none"
-		-- "full": highlights all matches until the top/bottom border or max_lines.
+		-- "full": highlights all matches until the top/bottom border or multi_line.max_lines.
 		-- "minimal": highlights the prefix/suffix matches in the current line, and upto exactly ONE match above/below the cursor if it exists.
 		-- "none": disables highlighting for matching characters.
-		style = "minimal", -- multi-line highlighting style.
+		style = "minimal", -- match highlighting style.
 		highlight_radius = 500, -- consider at most this many characters for highlighting around the cursor.
 		show_jump_numbers = false, -- show the number of jumps required to get to each matching character.
 		priority = 900, -- match highlight priority.
