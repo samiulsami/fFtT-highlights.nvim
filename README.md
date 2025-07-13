@@ -157,8 +157,8 @@ local default_opts = {
 
 		-- options: "full" | "minimal" | "none"
 		-- "full": highlights all matches until the top/bottom border or max_lines.
-		-- "minimal": highlights the prefix/suffix matches int the current line, and upto exactly ONE match above/below the cursor if it exists.
-		-- "none": disables multi-line highlighting.
+		-- "minimal": highlights the prefix/suffix matches in the current line, and upto exactly ONE match above/below the cursor if it exists.
+		-- "none": disables highlighting for matching characters.
 		style = "minimal", -- multi-line highlighting style.
 		highlight_radius = 500, -- consider at most this many characters for highlighting around the cursor.
 		show_jump_numbers = false, -- show the number of jumps required to get to each matching character.
@@ -183,7 +183,7 @@ local default_opts = {
 			-- "current_line": highlights from the until the last matching character in the cursor line.
 			-- "upto_next_line": highlights from the cursor line upto the next matching character in another line.
 			-- "none": disables backdrop highlighting while in motion.
-			show_in_motion = "until_next_line", -- highlight backdrop while in motion.
+			show_in_motion = "upto_next_line", -- highlight backdrop while in motion.
 		},
 		on_key_press = true, -- whether to show backdrop on keypress.
 		border_extend = 1, -- extend backdrop border horizontally by this many characters.

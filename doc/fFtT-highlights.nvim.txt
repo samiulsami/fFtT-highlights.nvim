@@ -102,7 +102,7 @@ local default_opts = {
 			-- "current_line": highlights from the until the last matching character in the cursor line.
 			-- "upto_next_line": highlights from the cursor line upto the next matching character in another line.
 			-- "none": disables backdrop highlighting while in motion.
-			show_in_motion = "until_next_line", -- highlight backdrop while in motion.
+			show_in_motion = "upto_next_line", -- highlight backdrop while in motion.
 		},
 		on_key_press = true, -- whether to show backdrop on keypress.
 		border_extend = 1, -- extend backdrop border horizontally by this many characters.

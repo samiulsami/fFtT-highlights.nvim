@@ -1,50 +1,50 @@
 ---@class fFtT_highlights.opts
----@field f string | nil f key. default: "f"
----@field F string | nil F key. default: "F"
----@field t string | nil t key. default: "t"
----@field T string | nil T key. default: "T"
----@field next string | nil next key. default: ";"
----@field prev string | nil previous key. default: ","
----@field reset_key string | nil highlight/jump reset key. default: "<Esc>"
----@field smart_motions boolean | nil whether to use f/F/t/T to go to next/previous characters. default: false
----@field case_sensitivity "default" | "smart_case" | "ignore_case" | nil case sensitivity. default: "sensitive""
----@field max_highlighted_lines_around_cursor integer | nil max number of lines to consider above/below cursor for highlighting. default: 300
----@field match_highlight match_highlight | nil
----@field multi_line multi_line | nil
----@field backdrop backdrop | nil
----@field jumpable_chars jumpable_chars | nil
----@field disabled_filetypes table<string> | nil disable the plugin for these filetypes: default: {}
----@field disabled_buftypes table<string> | nil disable the plugin for these buftypes: default: {"nofile"}
+---@field f string f key. default: "f"
+---@field F string F key. default: "F"
+---@field t string t key. default: "t"
+---@field T string T key. default: "T"
+---@field next string next key. default: ";"
+---@field prev string previous key. default: ","
+---@field reset_key string highlight/jump reset key. default: "<Esc>"
+---@field smart_motions boolean whether to use f/F/t/T to go to next/previous characters. default: false
+---@field case_sensitivity "default" | "smart_case" | "ignore_case" case sensitivity. default: "default"
+---@field max_highlighted_lines_around_cursor integer max number of lines to consider above/below cursor for highlighting. default: 300
+---@field match_highlight match_highlight
+---@field multi_line multi_line
+---@field backdrop backdrop
+---@field jumpable_chars jumpable_chars
+---@field disabled_filetypes table<string> disable the plugin for these filetypes: default: {}
+---@field disabled_buftypes table<string> disable the plugin for these buftypes: default: {"nofile"}
 
 ---@class match_highlight matching chars highlight configuration
----@field enable boolean | nil enable/disable matching chars highlight. default: true
+---@field enable boolean enable/disable matching chars highlight. default: true
 ---@field style "full" | "minimal" multi-line highlighting style. default: "minimal"
----@field highlight_radius integer | nil consider at most this many characters for highlighting. default: 500
----@field show_jump_numbers boolean nil show the number of jumps required to get to each matching character. default: false
----@field priority integer | nil match highlight priority. default: 900
+---@field highlight_radius integer consider at most this many characters for highlighting. default: 500
+---@field show_jump_numbers boolean show the number of jumps required to get to each matching character. default: false
+---@field priority integer match highlight priority. default: 900
 
 ---@class multi_line multi-line search configuration
----@field enable boolean | nil enable/disable multi-line search. default: false
----@field max_lines integer | nil (Forced window locality) max lines to consider above/below cursor if multi-line search is enabled. default: 300
+---@field enable boolean enable/disable multi-line search. default: false
+---@field max_lines integer (Forced window locality) max lines to consider above/below cursor if multi-line search is enabled. default: 300
 
 ---@class backdrop backdrop/background-dimming configuration
----@field style backdrop_style | nil backdrop style.
----@field on_keypress boolean | nil whether show backdrop on keypress. default: true
----@field border_extend integer | nil extend backdrop border horizontally by this many characters. default: "0"
----@field priority integer | nil backdrop highlight priority. default: 800
+---@field style backdrop_style backdrop style.
+---@field on_keypress boolean whether show backdrop on keypress. default: true
+---@field border_extend integer extend backdrop border horizontally by this many characters. default: "0"
+---@field priority integer backdrop highlight priority. default: 800
 
 ---@class backdrop_style
----@field on_key_press  "full" | "current_line" | "none" backdrop behavior upon keypress. default: "full"
+---@field on_key_press "full" | "current_line" | "none" backdrop behavior upon keypress. default: "full"
 ---@field show_in_motion "full" | "upto_next_line" | "current_line" | "none" backdrop behavior while in motion. default: "upto_next_line""
 
 ---@class jumpable_chars instantly jumpable characters configuration
----@field show_instantly_jumpable "on_key_press" | "always" | "never" | nil when to show instantly jumpable characters (options below have no effect when this is disabled). default: "always"
----@field show_secondary_jumpable "on_key_press" | "always" | "never" | nil when to show secondary jumpable characters. default: "never"
----@field show_all_jumpable_in_words "on_key_press" | "always" | "never" | nil when to show all jumpable characters. default: "never"
----@field show_multiline_jumpable "on_key_press" | "always" | "never" | nil when to show multi-line (if enabled) jumpable characters. default: "never"
----@field min_gap integer | nil minimum gap between two jumpable characters. default: 1
----@field priority integer | nil jumpable chars highlight priority. default: 1100
----@field priority_secondary integer | nil secondary jumpable chars highlight priority. default: 1000
+---@field show_instantly_jumpable "on_key_press" | "always" | "never" when to show instantly jumpable characters (options below have no effect when this is disabled). default: "always"
+---@field show_secondary_jumpable "on_key_press" | "always" | "never" when to show secondary jumpable characters. default: "never"
+---@field show_all_jumpable_in_words "on_key_press" | "always" | "never" when to show all jumpable characters. default: "never"
+---@field show_multiline_jumpable "on_key_press" | "always" | "never" when to show multi-line (if enabled) jumpable characters. default: "never"
+---@field min_gap integer minimum gap between two jumpable characters. default: 1
+---@field priority integer jumpable chars highlight priority. default: 1100
+---@field priority_secondary integer secondary jumpable chars highlight priority. default: 1000
 
 ---@class last_state
 ---@field motion string
@@ -181,8 +181,8 @@ end
 function fFtT_hl:validate_opts(opts)
 	local errors = {}
 	--stylua: ignore start
-	if not opts.match_highlight then
-		errors[#errors + 1] = "opts.match_highlight must be set!"
+	if not opts.match_highlight or type(opts.match_highlight) ~= "table" then
+		errors[#errors + 1] = "opts.match_highlight must be a valid table!"
 	else
 		if opts.match_highlight.highlight_radius < 0 then
 			errors[#errors + 1] = "opts.match_highlight.highlight_radius must be >= 0"
@@ -198,8 +198,8 @@ function fFtT_hl:validate_opts(opts)
 		errors[#errors + 1] = "opts.case_sensitivity must be one of 'default', 'smart_case' or 'ignore_case'"
 	end
 
-	if not opts.jumpable_chars then
-		errors[#errors + 1] = "opts.jumpable_chars must be set!"
+	if not opts.jumpable_chars or type(opts.jumpable_chars) ~= "table" then
+		errors[#errors + 1] = "opts.jumpable_chars must be a valid table!"
 	else
 		if opts.jumpable_chars.show_instantly_jumpable ~= "always" and opts.jumpable_chars.show_instantly_jumpable ~= "never" and opts.jumpable_chars.show_instantly_jumpable ~= "on_key_press" then
 			errors[#errors + 1] = "opts.jumpable_chars.show_instantly_jumpable must be one of 'always', 'never' or 'on_key_press'"
@@ -218,14 +218,14 @@ function fFtT_hl:validate_opts(opts)
 		end
 	end
 
-	if not opts.backdrop then
-		errors[#errors + 1] = "opts.backdrop must be set!"
+	if not opts.backdrop or type(opts.backdrop) ~= "table" then
+		errors[#errors + 1] = "opts.backdrop must be a valid table!"
 	else
 		if opts.backdrop.border_extend < 0 then
 			errors[#errors + 1] = "opts.backdrop.border_extend must be >= 0"
 		end
-		if not opts.backdrop.style then
-			errors[#errors + 1] = "opts.backdrop.style must be set!"
+		if not opts.backdrop.style or type(opts.backdrop.style) ~= "table" then
+			errors[#errors + 1] = "opts.backdrop.style must be a valid table!"
 		else
 			if opts.backdrop.style.on_key_press ~= "full" and opts.backdrop.style.on_key_press ~= "current_line" and opts.backdrop.style.on_key_press ~= "none" then
 				errors[#errors + 1] = "opts.backdrop.style.on_key_press must be one of 'current_line', 'full', or 'none'"
@@ -236,8 +236,8 @@ function fFtT_hl:validate_opts(opts)
 		end
 	end
 
-	if not opts.multi_line then
-		errors[#errors + 1] = "opts.multi_line.max_lines must be >= 0"
+	if not opts.multi_line or type(opts.multi_line) ~= "table" then
+		errors[#errors + 1] = "opts.multi_line must be a valid table!"
 	else
 		if opts.multi_line.max_lines < 0 then
 			errors[#errors + 1] = "opts.multi_line.max_lines must be >= 0"
