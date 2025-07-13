@@ -104,7 +104,6 @@ local default_opts = {
 			-- "none": disables backdrop highlighting while in motion.
 			show_in_motion = "upto_next_line", -- highlight backdrop while in motion.
 		},
-		on_key_press = true, -- whether to show backdrop on keypress.
 		border_extend = 1, -- extend backdrop border horizontally by this many characters.
 		priority = 800, -- backdrop highlight priority.
 	},

@@ -29,7 +29,6 @@
 
 ---@class backdrop backdrop/background-dimming configuration
 ---@field style backdrop_style backdrop style.
----@field on_keypress boolean whether show backdrop on keypress. default: true
 ---@field border_extend integer extend backdrop border horizontally by this many characters. default: "0"
 ---@field priority integer backdrop highlight priority. default: 800
 
@@ -108,7 +107,6 @@ local default_opts = {
 			show_in_motion = "upto_next_line",
 		},
 		border_extend = 0,
-		on_keypress = true,
 		priority = 800,
 	},
 	jumpable_chars = {
