@@ -6,6 +6,7 @@
 ---@field next string next key. default: ";"
 ---@field prev string previous key. default: ","
 ---@field reset_key string highlight/jump reset key. default: "<Esc>"
+---@field on_reset function | nil callback to run when reset_key is pressed. default: nil
 ---@field smart_motions boolean whether to use f/F/t/T to go to next/previous characters. default: false
 ---@field case_sensitivity "default" | "smart_case" | "ignore_case" case sensitivity. default: "default"
 ---@field max_highlighted_lines_around_cursor integer max number of lines to consider above/below cursor for highlighting. default: 300
@@ -178,6 +179,10 @@ end
 function fFtT_hl:validate_opts(opts)
 	local errors = {}
 	--stylua: ignore start
+	if opts.on_reset and type(opts.on_reset) ~= "function" then
+		errors[#errors + 1] = "opts.on_reset must be a function!"
+	end
+
 	if not opts.match_highlight or type(opts.match_highlight) ~= "table" then
 		errors[#errors + 1] = "opts.match_highlight must be a valid table!"
 	else
@@ -247,50 +252,62 @@ function fFtT_hl:validate_opts(opts)
 end
 
 function fFtT_hl:set_keymaps()
-	for _, motion in ipairs({ self.opts.f, self.opts.F, self.opts.t, self.opts.T }) do
+	local opts = self.opts
+	local utils = self.utils
+	for _, motion in ipairs({ opts.f, opts.F, opts.t, opts.T }) do
 		for _, mode in ipairs({ "n", "x" }) do
 			vim.keymap.set(mode, motion, function()
-				if self.utils:disabled_file_or_buftype(self.opts) then
+				if utils:disabled_file_or_buftype(opts) then
 					return motion
 				end
 				self.current_motion = motion
-				if self.opts.smart_motions and self.last_state and self.last_state.in_motion then
+				if opts.smart_motions and self.last_state and self.last_state.in_motion then
 					return "<Cmd>lua fFtT_hl:smart_motion()<CR>"
 				end
-				self.highlights:set_on_key_highlights(self.opts, motion)
-				self.saved_char = self.utils:get_char()
-				local row, col = self.utils:jump_to_next_char(
-					self.opts,
+				self.highlights:set_on_key_highlights(opts, motion)
+				local input = utils:get_char()
+				if not input or input == opts.reset_key then
+					self:motion_escape_sequence()
+					return opts.reset_key
+				end
+				self.saved_char = input
+				local row, col = utils:jump_to_next_char(
+					opts,
 					self.current_motion,
 					self.saved_char,
-					self.utils:is_reverse(self.opts, self.current_motion),
+					utils:is_reverse(opts, self.current_motion),
 					"n"
 				)
 				if row == 0 and col == 0 then
 					self:motion_escape_sequence()
-					return self.opts.reset_key
+					return opts.reset_key
 				end
 				return "<Cmd>lua fFtT_hl:fFtT_motion()<CR>"
 			end, { expr = true })
 		end
 
 		vim.keymap.set("o", motion, function()
-			if self.utils:disabled_file_or_buftype(self.opts) then
+			if utils:disabled_file_or_buftype(opts) then
 				return motion
 			end
 			self.current_motion = motion
-			self.highlights:set_on_key_highlights(self.opts, motion)
-			self.saved_char = self.utils:get_char()
-			local row, col = self.utils:jump_to_next_char(
-				self.opts,
+			self.highlights:set_on_key_highlights(opts, motion)
+			local input = utils:get_char()
+			if not input or input == opts.reset_key then
+				self:motion_escape_sequence()
+				return opts.reset_key
+			end
+			self.saved_char = input
+			local row, col = utils:jump_to_next_char(
+				opts,
 				self.current_motion,
 				self.saved_char,
-				self.utils:is_reverse(self.opts, self.current_motion),
+				utils:is_reverse(opts, self.current_motion),
 				"n"
 			)
 			if row == 0 and col == 0 then
 				self:motion_escape_sequence()
-				return self.opts.reset_key
+				return opts.reset_key
 			end
 			self.current_expr_motion = self.current_motion
 			self.saved_expr_char = self.saved_char
@@ -298,11 +315,11 @@ function fFtT_hl:set_keymaps()
 		end, { expr = true })
 	end
 
-	for _, motion in ipairs({ self.opts.next, self.opts.prev }) do
+	for _, motion in ipairs({ opts.next, opts.prev }) do
 		if motion ~= "" then
 			for _, mode in ipairs({ "n", "x" }) do
 				vim.keymap.set(mode, motion, function()
-					if self.utils:disabled_file_or_buftype(self.opts) then
+					if utils:disabled_file_or_buftype(opts) then
 						return motion
 					end
 					self.current_motion = motion
@@ -310,7 +327,7 @@ function fFtT_hl:set_keymaps()
 				end, { expr = true })
 			end
 			vim.keymap.set("o", motion, function()
-				if self.utils:disabled_file_or_buftype(self.opts) then
+				if utils:disabled_file_or_buftype(opts) then
 					return motion
 				end
 				self.current_motion = motion
@@ -326,6 +343,9 @@ function fFtT_hl:motion_escape_sequence()
 	self.highlights:clear_unique_char_hl()
 	if self.opts.jumpable_chars.show_instantly_jumpable == "always" then
 		self.highlights:highlight_jumpable_chars_on_line(self.opts)
+	end
+	if self.opts.on_reset then
+		self.opts.on_reset()
 	end
 	self.highlights.redraw()
 end
