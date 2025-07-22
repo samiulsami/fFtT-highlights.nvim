@@ -124,9 +124,6 @@ local default_opts = {
 
 ---@param opts? fFtT_highlights.opts
 function fFtT_hl:setup(opts)
-	if self.setup_done then
-		return
-	end
 	opts = opts or {}
 	opts = vim.tbl_deep_extend("force", default_opts, opts)
 	if not opts.multi_line.enable then
@@ -134,17 +131,19 @@ function fFtT_hl:setup(opts)
 	end
 	self:validate_opts(opts)
 	self.opts = opts
-	self.highlights = require("highlights")
-	self.utils = require("utils")
-	_G.fFtT_hl = fFtT_hl
 
-	self.setup_done = true
+	if not self.setup_done then
+		self.highlights = require("highlights")
+		self.utils = require("utils")
+		_G.fFtT_hl = fFtT_hl
 
-	self.highlights:setup_highlight_groups()
-	self.highlights:setup_highlight_reset_trigger(opts, self.utils, function()
-		self.last_state.in_motion = false
-	end)
-	self:set_keymaps()
+		self.highlights:setup_highlight_groups()
+		self.highlights:setup_highlight_reset_trigger(opts, self.utils, function()
+			self.last_state.in_motion = false
+		end)
+		self:set_keymaps()
+		self.setup_done = true
+	end
 
 	local fFtT_hl_clear_group = vim.api.nvim_create_augroup("fFtTHLClearGroup", { clear = true })
 
