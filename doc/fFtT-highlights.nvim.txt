@@ -62,7 +62,9 @@ local default_opts = {
 	T = "T", -- backward till key
 	next = ";", -- next key
 	prev = ",", -- previous key
-	reset_key = "<Esc>", -- reset highlights key
+	reset_key = "<Esc>", -- key to reset highlights and cancel character-pending state
+
+	on_reset = nil, -- callback to run when reset_key is pressed
 
 	smart_motions = false, -- whether to use f/F/t/T to go to next/previous characters
 
