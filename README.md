@@ -162,9 +162,10 @@ local default_opts = {
 		-- "minimal": highlights the prefix/suffix matches in the current line, and upto exactly ONE match above/below the cursor if it exists.
 		-- "none": disables highlighting for matching characters.
 		style = "minimal", -- match highlighting style.
+		persist_matches = 0, -- number of matches to keep highlighted that the cursor passed over.
 		highlight_radius = 500, -- consider at most this many characters for highlighting around the cursor.
 		show_jump_numbers = false, -- show the number of jumps required to get to each matching character.
-		priority = 900, -- match highlight priority.
+		priority = 1200, -- match highlight priority.
 	},
 
 	multi_line = {
