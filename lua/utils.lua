@@ -4,13 +4,66 @@
 ---@field is_reverse fun(self, opts: fFtT_highlights.opts, motion: string, last_motion?: string): boolean
 ---@field jump_to_next_char fun(self, opts: fFtT_highlights.opts, motion: string, char: string, reverse: boolean, extra_flags?: string): integer | nil, integer | nil
 ---@field disabled_file_or_buftype fun(self, opts: fFtT_highlights.opts): boolean
----@field charmap table<string, string>
+---@field private charmap table<string, string>
+---@field private cursor_positions cursor_positions
+---@field store_cursor_position fun(self, bufnr: integer, row: integer, col: integer, limit: integer): nil
+---@field get_cursor_position_history fun(self): table<integer, position_data>
+---@field reset_cursor_history fun(self): nil
 local utils = {
 	charmap = { --HACK:
 		["<space>"] = " ",
 		["<lt>"] = "<",
 	},
+	cursor_positions = {
+		data = {},
+		head = 1,
+		tail = 0,
+	},
 }
+
+---@class cursor_positions
+---@field data table<integer, position_data>
+---@field head integer
+---@field tail integer
+
+---@class position_data
+---@field bufnr integer
+---@field row integer
+---@field col integer
+
+---@param bufnr integer
+---@param row integer
+---@param col integer
+---@param limit integer
+function utils:store_cursor_position(bufnr, row, col, limit)
+	local data = {
+		bufnr = bufnr,
+		row = row,
+		col = col,
+	}
+	limit = math.min(limit, 637)
+	self.cursor_positions.tail = self.cursor_positions.tail + 1
+	self.cursor_positions.data[self.cursor_positions.tail] = data
+	while self.cursor_positions.tail - self.cursor_positions.head + 1 > limit do
+		self.cursor_positions.data[self.cursor_positions.head] = nil
+		self.cursor_positions.head = self.cursor_positions.head + 1
+	end
+end
+
+---@return table<integer, position_data>
+function utils:get_cursor_position_history()
+	local positions = {}
+	for i = self.cursor_positions.head, self.cursor_positions.tail, 1 do
+		positions[#positions + 1] = self.cursor_positions.data[i]
+	end
+	return positions
+end
+
+function utils:reset_cursor_history()
+	self.cursor_positions.head = 1
+	self.cursor_positions.tail = 0
+	self.cursor_positions.data = {}
+end
 
 ---@return string | nil
 function utils:get_char()

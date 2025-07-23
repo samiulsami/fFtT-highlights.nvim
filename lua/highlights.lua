@@ -8,6 +8,7 @@
 ---@field set_backdrop_highlight fun(self, opts: fFtT_highlights.opts, bufnr: number, line: string, row: number, from: number, to: number): nil
 ---@field highlight_jumpable_chars_on_line fun(self, opts: fFtT_highlights.opts): nil
 ---@field setup_highlight_reset_trigger fun(self, opts: fFtT_highlights.opts, utils: utils, callback: fun(): nil): nil
+---@field set_highlights_in_custom_pos fun(self, opts: fFtT_highlights.opts, position_data: table<integer, position_data>): nil
 ---@field update_fFtT_hl_lines_info fun(self, extmark_id: integer, bufnr: integer): nil
 ---@field update_unique_hl_lines_info fun(self, extmark_id: integer, bufnr: integer): nil
 ---@field fFtT_ns number
@@ -419,6 +420,20 @@ function highlight_utils:set_backdrop_highlight(opts, bufnr, line, row, from, to
 		priority = opts.backdrop.priority,
 	})
 	self:update_fFtT_hl_lines_info(extmark_id, bufnr)
+end
+
+---@param opts fFtT_highlights.opts
+---@param position_data table<integer, position_data>
+function highlight_utils:set_highlights_in_custom_pos(opts, position_data)
+	for _, curpos_data in ipairs(position_data) do
+		local extmark_id =
+			vim.api.nvim_buf_set_extmark(curpos_data.bufnr, self.fFtT_ns, curpos_data.row, curpos_data.col, {
+				end_col = curpos_data.col + 1,
+				hl_group = self.match_highlight,
+				priority = opts.match_highlight.priority,
+			})
+		self:update_fFtT_hl_lines_info(extmark_id, curpos_data.bufnr)
+	end
 end
 
 ---@param extmark_id integer

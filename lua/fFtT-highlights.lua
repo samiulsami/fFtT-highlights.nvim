@@ -20,9 +20,10 @@
 ---@class match_highlight matching chars highlight configuration
 ---@field enable boolean enable/disable matching chars highlight. default: true
 ---@field style "full" | "minimal" match highlighting style. default: "minimal"
+---@field persist_matches integer number of matches to keep highlighted that the cursor passed over. default: 0
 ---@field highlight_radius integer consider at most this many characters for highlighting. default: 500
 ---@field show_jump_numbers boolean show the number of jumps required to get to each matching character. default: false
----@field priority integer match highlight priority. default: 900
+---@field priority integer match highlight priority. default: 1200
 
 ---@class multi_line multi-line search configuration
 ---@field enable boolean enable/disable multi-line search. default: false
@@ -95,8 +96,9 @@ local default_opts = {
 		enable = true,
 		highlight_radius = 500,
 		style = "minimal",
+		persist_matches = 0,
 		show_jump_numbers = false,
-		priority = 900,
+		priority = 1200,
 	},
 	multi_line = {
 		enable = false,
@@ -140,6 +142,9 @@ function fFtT_hl:setup(opts)
 
 		self.highlights:setup_highlight_groups()
 		self.highlights:setup_highlight_reset_trigger(opts, self.utils, function()
+			if not self.last_state.in_motion then
+				self.utils:reset_cursor_history()
+			end
 			self.last_state.in_motion = false
 		end)
 		self:set_keymaps()
@@ -191,6 +196,9 @@ function fFtT_hl:validate_opts(opts)
 		end
 		if opts.match_highlight.style ~= "minimal" and opts.match_highlight.style ~= "full" then
 			errors[#errors + 1] = "opts.match_highlight.style must be one of 'full' or 'minimal'"
+		end
+		if opts.match_highlight.persist_matches < 0 then
+			errors[#errors + 1] = "opts.match_highlight.persist_matches must be >= 0"
 		end
 	end
 	if opts.max_highlighted_lines_around_cursor < 0 then
@@ -439,9 +447,15 @@ function fFtT_hl:jump_and_highlight(bufnr, motion, char, reverse)
 		if new_row == 0 and new_col == 0 then
 			break
 		end
+		if new_row and new_col and opts.match_highlight.persist_matches > 0 then
+			utils:store_cursor_position(bufnr, new_row - 1, new_col - 1, opts.match_highlight.persist_matches or 0)
+		end
 	end
 
 	highlights:set_in_motion_highlights(opts, utils, bufnr, char, reverse)
+	if opts.match_highlight.persist_matches > 0 then
+		highlights:set_highlights_in_custom_pos(opts, utils:get_cursor_position_history())
+	end
 end
 
 return fFtT_hl
