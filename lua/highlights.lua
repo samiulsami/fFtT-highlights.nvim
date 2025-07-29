@@ -8,7 +8,7 @@
 ---@field set_backdrop_highlight fun(self, opts: fFtT_highlights.opts, bufnr: number, line: string, row: number, from: number, to: number): nil
 ---@field highlight_jumpable_chars_on_line fun(self, opts: fFtT_highlights.opts): nil
 ---@field setup_highlight_reset_trigger fun(self, opts: fFtT_highlights.opts, utils: utils, callback: fun(): nil): nil
----@field set_highlights_in_custom_pos fun(self, opts: fFtT_highlights.opts, position_data: table<integer, position_data>): nil
+---@field set_highlights_in_custom_pos fun(self, opts: fFtT_highlights.opts, position_data: table<integer, position_data>, reverse: boolean): nil
 ---@field update_fFtT_hl_lines_info fun(self, extmark_id: integer, bufnr: integer): nil
 ---@field update_unique_hl_lines_info fun(self, extmark_id: integer, bufnr: integer): nil
 ---@field fFtT_ns number
@@ -424,8 +424,55 @@ end
 
 ---@param opts fFtT_highlights.opts
 ---@param position_data table<integer, position_data>
-function highlight_utils:set_highlights_in_custom_pos(opts, position_data)
+---@param reverse boolean
+function highlight_utils:set_highlights_in_custom_pos(opts, position_data, reverse)
+	---@class backdrop_data
+	---@field row integer
+	---@field col integer
+	local topleft, botright = nil, nil
+	local bufnr = nil
+
 	for _, curpos_data in ipairs(position_data) do
+		if topleft == nil or botright == nil then
+			bufnr = curpos_data.bufnr
+			topleft = {
+				row = curpos_data.row,
+				col = curpos_data.col,
+			}
+			botright = {
+				row = curpos_data.row,
+				col = curpos_data.col,
+			}
+		elseif
+			opts.backdrop.style.show_in_motion == "upto_next_line" or opts.backdrop.style.show_in_motion == "full"
+		then
+			if topleft.row > curpos_data.row or topleft.row == curpos_data.row and topleft.col > curpos_data.col then
+				topleft.row = curpos_data.row
+				topleft.col = curpos_data.col
+			end
+			if botright.row < curpos_data.row or botright.row == curpos_data.row and botright.col < curpos_data.col then
+				botright.row = curpos_data.row
+				botright.col = curpos_data.col
+			end
+		elseif opts.backdrop.style.show_in_motion == "current_line" then
+			if
+				(reverse and topleft.row > curpos_data.row)
+				or (not reverse and botright.row < curpos_data.row)
+				or topleft.row == curpos_data.row and topleft.col > curpos_data.col
+			then
+				topleft.row = curpos_data.row
+				topleft.col = curpos_data.col
+			end
+			if
+				(reverse and botright.row > curpos_data.row)
+				or (not reverse and botright.row < curpos_data.row)
+				or botright.row == curpos_data.row and botright.col < curpos_data.col
+			then
+				botright.row = curpos_data.row
+				botright.col = curpos_data.col
+			end
+		end
+
 		local extmark_id =
 			vim.api.nvim_buf_set_extmark(curpos_data.bufnr, self.fFtT_ns, curpos_data.row, curpos_data.col, {
 				end_col = curpos_data.col + 1,
@@ -433,6 +480,16 @@ function highlight_utils:set_highlights_in_custom_pos(opts, position_data)
 				priority = opts.match_highlight.priority,
 			})
 		self:update_fFtT_hl_lines_info(extmark_id, curpos_data.bufnr)
+	end
+
+	if opts.backdrop.style.show_in_motion ~= "none" and topleft and botright and bufnr then
+		local extmark_id = vim.api.nvim_buf_set_extmark(bufnr, self.fFtT_ns, topleft.row, topleft.col, {
+			end_row = botright.row,
+			end_col = botright.col + 1,
+			hl_group = self.backdrop_highlight,
+			priority = opts.backdrop.priority,
+		})
+		self:update_fFtT_hl_lines_info(extmark_id, bufnr)
 	end
 end
 

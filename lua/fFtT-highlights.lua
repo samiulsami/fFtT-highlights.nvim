@@ -454,7 +454,7 @@ function fFtT_hl:jump_and_highlight(bufnr, motion, char, reverse)
 
 	highlights:set_in_motion_highlights(opts, utils, bufnr, char, reverse)
 	if opts.match_highlight.persist_matches > 0 then
-		highlights:set_highlights_in_custom_pos(opts, utils:get_cursor_position_history())
+		highlights:set_highlights_in_custom_pos(opts, utils:get_cursor_position_history(), reverse)
 	end
 end
 
