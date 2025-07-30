@@ -106,6 +106,8 @@ local default_opts = {
 			-- "upto_next_line": highlights from the cursor line upto the next matching character in another line.
 			-- "none": disables backdrop highlighting while in motion.
 			show_in_motion = "upto_next_line", -- highlight backdrop while in motion.
+
+			persist_backdrop = true, -- whether to persist backdrop highlight for persisted matches.
 		},
 		border_extend = 1, -- extend backdrop border horizontally by this many characters.
 		priority = 800, -- backdrop highlight priority.

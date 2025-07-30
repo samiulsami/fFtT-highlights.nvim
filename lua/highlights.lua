@@ -482,7 +482,13 @@ function highlight_utils:set_highlights_in_custom_pos(opts, position_data, rever
 		self:update_fFtT_hl_lines_info(extmark_id, curpos_data.bufnr)
 	end
 
-	if opts.backdrop.style.show_in_motion ~= "none" and topleft and botright and bufnr then
+	if
+		opts.backdrop.style.show_in_motion ~= "none"
+		and opts.backdrop.style.persist_backdrop
+		and topleft
+		and botright
+		and bufnr
+	then
 		local extmark_id = vim.api.nvim_buf_set_extmark(bufnr, self.fFtT_ns, topleft.row, topleft.col, {
 			end_row = botright.row,
 			end_col = botright.col + 1,

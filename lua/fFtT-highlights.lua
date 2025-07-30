@@ -37,6 +37,7 @@
 ---@class backdrop_style
 ---@field on_key_press "full" | "current_line" | "none" backdrop behavior upon keypress. default: "full"
 ---@field show_in_motion "full" | "upto_next_line" | "current_line" | "none" backdrop behavior while in motion. default: "upto_next_line""
+---@field persist_backdrop boolean whether to persist backdrop highlight for persisted matches. default: true
 
 ---@class jumpable_chars instantly jumpable characters configuration
 ---@field show_instantly_jumpable "on_key_press" | "always" | "never" when to show instantly jumpable characters (options below have no effect when this is disabled). default: "always"
@@ -108,6 +109,7 @@ local default_opts = {
 		style = {
 			on_key_press = "full",
 			show_in_motion = "upto_next_line",
+			persist_backdrop = true,
 		},
 		border_extend = 0,
 		priority = 800,
