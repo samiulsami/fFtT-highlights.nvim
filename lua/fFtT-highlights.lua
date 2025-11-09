@@ -8,6 +8,7 @@
 ---@field reset_key string highlight/jump reset key. default: "<Esc>"
 ---@field on_reset function | nil callback to run when reset_key is pressed. default: nil
 ---@field smart_motions boolean whether to use f/F/t/T to go to next/previous characters. default: false
+---@field fixed_direction boolean if true, next key always searches right, prev key always searches left. default: false
 ---@field case_sensitivity "default" | "smart_case" | "ignore_case" case sensitivity. default: "default"
 ---@field max_highlighted_lines_around_cursor integer max number of lines to consider above/below cursor for highlighting. default: 300
 ---@field match_highlight match_highlight
@@ -91,6 +92,7 @@ local default_opts = {
 	prev = ",",
 	reset_key = "<Esc>",
 	smart_motions = false,
+	fixed_direction = false,
 	case_sensitivity = "default",
 	max_highlighted_lines_around_cursor = 300,
 	match_highlight = {

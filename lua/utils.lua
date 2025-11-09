@@ -107,7 +107,7 @@ function utils:is_reverse(opts, motion, last_motion)
 		return true
 	end
 
-	if not last_motion then
+	if opts.fixed_direction or not last_motion then
 		return motion == opts.prev
 	end
 	local reverse = (last_motion == opts.F or last_motion == opts.T)
