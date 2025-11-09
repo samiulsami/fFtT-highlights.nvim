@@ -149,6 +149,8 @@ local default_opts = {
 
 	smart_motions = false, -- whether to use f/F/t/T to go to next/previous characters
 
+	fixed_direction = false, -- if true, next key (;) always searches right, prev key (,) always searches left (ignores case of last motion)
+
 	-- options: "default" | "smart_case" | "ignore_case"
 	case_sensitivity = "default", -- case sensitivity
 
