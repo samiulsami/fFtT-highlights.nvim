@@ -79,7 +79,7 @@ function highlight_utils:highlight_jumpable_chars_on_line(opts)
 	--stylua: ignore start
 	local reverse_seen = self:highlight_jumpable_chars(opts, bufnr, cursor_row, line, math.max(0, cursor_col - 1 - opts.match_highlight.highlight_radius + 1), cursor_col - 1 , true, opts.jumpable_chars.show_all_jumpable_in_words == "always", opts.jumpable_chars.show_secondary_jumpable == "always")
 	local forward_seen = self:highlight_jumpable_chars(opts, bufnr, cursor_row, line, cursor_col + 1, math.min(vim.fn.strchars(line) - 1, cursor_col + 1 + opts.match_highlight.highlight_radius - 1), false, opts.jumpable_chars.show_all_jumpable_in_words == "always", opts.jumpable_chars.show_secondary_jumpable == "always")
-	--stlua: ignore end
+	--stylua: ignore end
 
 	if not opts.multi_line.enable or opts.jumpable_chars.show_multiline_jumpable ~= "always" then
 		return
