@@ -192,7 +192,7 @@ local default_opts = {
 
 			persist_backdrop = true, -- whether to persist backdrop highlight for persisted matches.
 		},
-		border_extend = 1, -- extend backdrop border horizontally by this many characters.
+		border_extend = 0, -- extend backdrop border horizontally by this many characters.
 		priority = 800, -- backdrop highlight priority.
 	},
 
